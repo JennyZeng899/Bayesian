@@ -1,0 +1,557 @@
+---
+title: "Untitled"
+author: "Jenny"
+date: "2023-09-11"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(brms) # fitting Bayesian models
+library(bayestestR) # helper functions for plotting and understanding the models
+library(tidybayes) # helper functions for combining plotting and tidy data from models
+library(tidyverse)
+library(see) # helper functions for plotting objects from bayestestR
+library(emmeans) # Handy function for calculating (marginal) effect sizes
+library(patchwork) # Combine multiple plots
+
+# Install brms package may face problem please visit https://bartlettje.github.io/statsresdesign/installing-r.html#installing-r for install tips
+```
+
+# preprocess data
+This section aim to import the data, you need to change the files address that suit your computer (could just use the address from the file, but for some reasons my computer cannot do that so i just use the long address). 
+
+this sessions is not needed if you have better way to tidy up data (cause the data you sent have comma which cannot directly analysis by R ) and put it into long fomat feel free to do so. 
+
+The loop part is only apply to the dataset you sent me (average erp data for each participant from all trials), this will need to rewrite when involved individual level and trials level data in. 
+
+```{r}
+data_files <- list.files("C:/Users/jenny/OneDrive - University of Glasgow/final/code/data/kdata/erp2")  # Identify file names
+
+ktimeso <- read.table("C:/Users/jenny/OneDrive - University of Glasgow/final/code/data/kdata/times.txt") 
+ktimes <- as.numeric(t(as.data.frame(strsplit(ktimeso$V1, split = ","))))
+
+
+fo <- data.frame(fo = rep (NA, 650))
+
+for(i in 1:24) {                              
+       data <-  read.table(paste0("C:/Users/jenny/OneDrive - University of Glasgow/final/code/data/kdata/erp2/", data_files[i]))
+       data <- as.data.frame(strsplit(data$V1, split = ","))
+       
+       for (v in 1:length(data)){
+         data[,v] <- as.numeric(data[,v])
+         colnames(data)<-c(ktimes)
+       }
+       
+       data<-as.data.frame(colMeans(data[sapply(data, is.numeric)], na.rm=TRUE))
+       fo[,i] <-  data[1]
+       colnames(fo)[i]<-paste0("oparticipant",i)
+       assign(paste0("fo", i),data)
+}
+
+folong <- cbind(ktimes, fo)
+folong <- pivot_longer(folong, cols = 2:25, names_to = "participants", values_to = "erp")|>
+  add_column(group = "old")
+
+fy <- data.frame(fy = rep (NA, 650))
+
+for(i in 25:48) {                              
+       data <-  read.table(paste0("C:/Users/jenny/OneDrive - University of Glasgow/final/code/data/kdata/erp2/", data_files[i]))
+       data <- as.data.frame(strsplit(data$V1, split = ","))
+       
+       for (v in 1:length(data)){
+         data[,v] <- as.numeric(data[,v])
+         colnames(data)<-c(ktimes)}
+       
+       data<-as.data.frame(colMeans(data[sapply(data, is.numeric)], na.rm=TRUE))
+       fy[,i-24] <-  data[1]
+       colnames(fy)[i-24]<-paste0("yparticipant",i-24)
+       assign(paste0("fy", i-24),data)
+}
+
+fylong <- cbind(ktimes, fy)
+fylong <- pivot_longer(fylong, cols = 2:25, names_to = "participants", values_to = "erp")|>
+  add_column(group = "young")
+
+
+fon <- data.frame(fon = rep (NA, 650))
+
+for(i in 49:72) {                              
+       data <-  read.table(paste0("C:/Users/jenny/OneDrive - University of Glasgow/final/code/data/kdata/erp2/", data_files[i]))
+       data <- as.data.frame(strsplit(data$V1, split = ","))
+       
+       for (v in 1:length(data)){
+         data[,v] <- as.numeric(data[,v])
+         colnames(data)<-c(ktimes)}
+       
+       data<- as.data.frame(colMeans(data[sapply(data, is.numeric)], na.rm=TRUE))
+       fon[,i-48] <-  data[1]
+       colnames(fon)[i-48]<-paste0("oparticipant",i-48)
+       assign(paste0("fon", i-48),data)
+}
+
+fonlong <- cbind(ktimes, fon)
+fonlong <- pivot_longer(fonlong, cols = 2:25, names_to = "participants", values_to = "erp")|>
+  add_column(group = "old")
+
+
+fyn <- data.frame(fyn = rep (NA, 650))
+
+for(i in 73:96) {                              
+       data <-  read.table(paste0("C:/Users/jenny/OneDrive - University of Glasgow/final/code/data/kdata/erp2/", data_files[i]))
+       data <- as.data.frame(strsplit(data$V1, split = ","))
+       
+       for (v in 1:length(data)){
+         data[,v] <- as.numeric(data[,v])
+         colnames(data)<-c(ktimes)}
+       
+       data<-as.data.frame(colMeans(data[sapply(data, is.numeric)], na.rm=TRUE))
+       fyn[,i-72] <-  data[1]
+       colnames(fyn)[i-72]<-paste0("yparticipant",i-72)
+       assign(paste0("fyn", i-72),data)
+}
+
+fynlong <- cbind(ktimes, fyn)
+fynlong <- pivot_longer(fynlong, cols = 2:25, names_to = "participants", values_to = "erp")|>
+  add_column(group = "young")
+
+```
+
+```{r}
+ho <- data.frame(ho = rep (NA, 650))
+
+for(i in 97:120) {                              
+       data <-  read.table(paste0("C:/Users/jenny/OneDrive - University of Glasgow/final/code/data/kdata/erp2/", data_files[i]))
+       data <- as.data.frame(strsplit(data$V1, split = ","))
+       
+       for (v in 1:length(data)){
+         data[,v] <- as.numeric(data[,v])
+         colnames(data)<-c(ktimes)}
+       
+       data<-as.data.frame(colMeans(data[sapply(data, is.numeric)], na.rm=TRUE))
+       ho[,i-96] <-  data[1]
+       colnames(ho)[i-96]<-paste0("oparticipant",i-96)
+       assign(paste0("ho", i-96),data)
+}
+
+
+holong <- cbind(ktimes, ho)
+holong <- pivot_longer(holong, cols = 2:25, names_to = "participants", values_to = "erp")|>
+  add_column(group = "old")
+  
+
+hy <- data.frame(hy = rep (NA, 650))
+
+for(i in 121:144) {                              
+       data <-  read.table(paste0("C:/Users/jenny/OneDrive - University of Glasgow/final/code/data/kdata/erp2/", data_files[i]))
+       data <- as.data.frame(strsplit(data$V1, split = ","))
+       
+       for (v in 1:length(data)){
+         data[,v] <- as.numeric(data[,v])
+         colnames(data)<-c(ktimes)}
+       
+       
+       data<-as.data.frame(colMeans(data[sapply(data, is.numeric)], na.rm=TRUE))
+       hy[,i-120] <-  data[1]
+       colnames(hy)[i-120]<-paste0("yparticipant",i-120)
+       assign(paste0("hy", i-120),data)
+}
+
+hylong <- cbind(ktimes, hy)
+hylong <- pivot_longer(hylong, cols = 2:25, names_to = "participants", values_to = "erp")|>
+  add_column(group = "young")
+
+hon <- data.frame(hon = rep (NA, 650))
+
+for(i in 145:168) {                              
+       data <-  read.table(paste0("C:/Users/jenny/OneDrive - University of Glasgow/final/code/data/kdata/erp2/", data_files[i]))
+       data <- as.data.frame(strsplit(data$V1, split = ","))
+       
+       for (v in 1:length(data)){
+         data[,v] <- as.numeric(data[,v])
+         colnames(data)<-c(ktimes)}
+       
+       data<-as.data.frame(colMeans(data[sapply(data, is.numeric)], na.rm=TRUE))
+       hon[,i-144] <-  data[1]
+       colnames(hon)[i-144]<-paste0("oparticipant",i-144)
+       assign(paste0("hon", i-144),data)
+}
+
+honlong <- cbind(ktimes, hon)
+honlong <- pivot_longer(honlong, cols = 2:25, names_to = "participants", values_to = "erp")|>
+  add_column(group = "old")
+
+hyn <- data.frame(fhhyn = rep (NA, 650))
+
+for(i in 169:192) {                              
+       data <-  read.table(paste0("C:/Users/jenny/OneDrive - University of Glasgow/final/code/data/kdata/erp2/", data_files[i]))
+       data <- as.data.frame(strsplit(data$V1, split = ","))
+       
+       for (v in 1:length(data)){
+         data[,v] <- as.numeric(data[,v])
+         colnames(data)<-c(ktimes)}
+       
+       data<-as.data.frame(colMeans(data[sapply(data, is.numeric)], na.rm=TRUE))
+       hyn[,i-168] <-  data[1]
+       colnames(hyn)[i-168]<-paste0("yparticipant",i-168)
+       assign(paste0("hyn", i-168),data)
+}
+
+hynlong <- cbind(ktimes, hyn)
+hynlong <- pivot_longer(hynlong, cols = 2:25, names_to = "participants", values_to = "erp")|>
+  add_column(group = "young")
+
+```
+
+```{r}
+lo <- data.frame(lo = rep (NA, 650))
+
+for(i in 193:216) {                              
+       data <-  read.table(paste0("C:/Users/jenny/OneDrive - University of Glasgow/final/code/data/kdata/erp2/", data_files[i]))
+       data <- as.data.frame(strsplit(data$V1, split = ","))
+       
+       for (v in 1:length(data)){
+         data[,v] <- as.numeric(data[,v])
+         colnames(data)<-c(ktimes)}
+       
+       data<-as.data.frame(colMeans(data[sapply(data, is.numeric)], na.rm=TRUE))
+       lo[,i-192] <-  data[1]
+       colnames(lo)[i-192]<-paste0("oparticipant",i-192)
+       assign(paste0("lo", i-192),data)
+}
+
+lolong <- cbind(ktimes, lo)
+lolong <- pivot_longer(lolong, cols = 2:25, names_to = "participants", values_to = "erp")|>
+  add_column(group = "old")
+
+ly <- data.frame(ly = rep (NA, 650))
+
+for(i in 217:240) {                              
+       data <-  read.table(paste0("C:/Users/jenny/OneDrive - University of Glasgow/final/code/data/kdata/erp2/", data_files[i]))
+       data <- as.data.frame(strsplit(data$V1, split = ","))
+       
+       for (v in 1:length(data)){
+         data[,v] <- as.numeric(data[,v])
+         colnames(data)<-c(ktimes)}
+       
+       data<-as.data.frame(colMeans(data[sapply(data, is.numeric)], na.rm=TRUE))
+       ly[,i-216] <-  data[1]
+       colnames(ly)[i-216]<-paste0("yparticipant",i-216)
+       assign(paste0("ly", i-216),data)
+}
+
+lylong <- cbind(ktimes, ly)
+lylong <- pivot_longer(lylong, cols = 2:25, names_to = "participants", values_to = "erp")|>
+  add_column(group = "young")
+
+
+lon <- data.frame(lon = rep (NA, 650))
+
+for(i in 241:264) {                              
+       data <-  read.table(paste0("C:/Users/jenny/OneDrive - University of Glasgow/final/code/data/kdata/erp2/", data_files[i]))
+       data <- as.data.frame(strsplit(data$V1, split = ","))
+       
+       for (v in 1:length(data)){
+         data[,v] <- as.numeric(data[,v])
+         colnames(data)<-c(ktimes)}
+       
+       data<-as.data.frame(colMeans(data[sapply(data, is.numeric)], na.rm=TRUE))
+       lon[,i-240] <-  data[1]
+       colnames(lon)[i-240]<-paste0("oparticipant",i-240)
+       assign(paste0("lon", i-240),data)
+}
+
+lonlong <- cbind(ktimes, lon)
+lonlong <- pivot_longer(lonlong, cols = 2:25, names_to = "participants", values_to = "erp")|>
+  add_column(group = "old")
+
+
+lyn <- data.frame(lyn = rep (NA, 650))
+
+for(i in 265:288) {                              
+       data <-  read.table(paste0("C:/Users/jenny/OneDrive - University of Glasgow/final/code/data/kdata/erp2/", data_files[i]))
+       data <- as.data.frame(strsplit(data$V1, split = ","))
+       
+       for (v in 1:length(data)){
+         data[,v] <- as.numeric(data[,v])
+         colnames(data)<-c(ktimes)}
+       
+       data<-as.data.frame(colMeans(data[sapply(data, is.numeric)], na.rm=TRUE))
+       lyn[,i-264] <-  data[1]
+       colnames(lyn)[i-264]<-paste0("yparticipant",i-264)
+       assign(paste0("lyn", i-264),data)
+}
+
+lynlong <- cbind(ktimes, lyn)
+lynlong <- pivot_longer(lynlong, cols = 2:25, names_to = "participants", values_to = "erp")|>
+  add_column(group = "young")
+
+
+
+```
+
+```{r}
+diff <- function(df1,df2,groupname){
+  
+ dfdiff <- as.data.frame(df1$erp-df2$erp) 
+ colnames (dfdiff)[1]<- paste0("diff")
+ dfdiff <-  cbind(df1,df2$erp, dfdiff) 
+}
+
+#different between condition
+
+fhodiff <- diff(folong,holong)
+fhydiff <- diff(fylong,hylong)
+
+flodiff <- diff(folong,lolong)
+flydiff <- diff(fylong,lylong)
+
+hlodiff <- diff(holong,lolong)
+hlydiff <- diff(hylong,lylong)
+
+# different between condition in noise
+fhondiff <- diff(fonlong,honlong)
+fhyndiff <- diff(fynlong,hynlong)
+
+flondiff <- diff(fonlong,lonlong)
+flyndiff <- diff(fynlong,lynlong)
+
+hlondiff <- diff(honlong,lonlong)
+hlyndiff <- diff(hynlong,lynlong)
+```
+
+
+# testing brm model in two time point (0 ms and 2 ms)
+
+## selet target time point 
+```{r}
+
+fhodiff0 <- filter(fhodiff, ktimes == 0)
+fhydiff0 <- filter(fhydiff, ktimes == 0)
+
+fhdiff0 <- rbind(fhodiff0, fhydiff0)
+
+fhodiff2 <- filter(fhodiff, ktimes == 2)
+fhydiff2 <- filter(fhydiff, ktimes == 2)
+
+
+fhdiff2 <- rbind(fhodiff2, fhydiff2)
+
+```
+
+## test model 
+the following section was based on this link ![this link (https://bartlettje.github.io/statsresdesign/introduction-to-bayesian-estimation.html)]
+
+i only use two variables (face vs house, old vs young) here for testiong, the following function will create a picture for change in prior at every 2 ms between -100ms to 600 ms. Please ensure you computer have enough space for saving picture (creat a 3D version maybe a better idea). 
+
+```{r}
+model1 <- bf(diff ~ group) #set up a model formula
+# something like this?
+# model <- bf(diff ~ group*noise 
+#                    + (1 | subj) # add individual variation 
+#                    + (1 | item), # add trial variation)
+#  sigma ~ 1 + (1 | subj)) # set a by-subject hierarchical structure to the parameter σ
+
+```
+
+For the first time point, i didn't set prior use defult prior (this may leads to the first model didn't fit well). 
+
+```{r}
+fit1 <- brm(
+  formula = model1, # formula we defined above 
+  data = fhdiff0, # Data frame we're using 
+  family = gaussian(), # What distribution family do we want for the likelihood function? 
+  sample_prior = TRUE, # Setting this to true includes the prior in the object, so we can include it on plots later
+  seed = 1908,
+ file = "Models/model1" #Save the model as a .rds file
+)
+```
+The following function was use to test the fitness of the model and willnot invovled in the loop. if you think any of this information is nessery please add it into to loop.
+
+```{r}
+summary(fit1) 
+```
+so the important information in this summery is the Tail-ess and the R-hat. the tail-ess is ideally larger that 1000 and rhat = 1. the posterior is the estimate and the est.error.
+
+```{r}
+describe_posterior(fit1) #to view the posterior 
+```
+
+```{r}
+plot(fit1)
+#this function also use to test the fitness of the model. the key part is the chain on the right panel. to ensure their is no extreme outliner.
+```
+
+```{r}
+plot(p_direction(fit1), 
+     priors = TRUE) 
+```
+```{r}
+plot(bayestestR::hdi(fit1)) # Specify package to avoid clash with ggdist
+```
+
+```{r}
+plot(rope(fit1, 
+          range = c(-1, 1))) # What is the ROPE range for your smallest effects of interest? 
+```
+
+```{r}
+pp_check(fit1, 
+         ndraws = 100) # How many draws from the posterior? Higher values means more lines
+```
+
+```{r}
+# i use posterior_summary() to get the posterior and set it into ptior
+posterior1 <- posterior_summary(fit1)
+```
+
+
+```{r}
+# please double check.and please ensure normal distribution is the right distribution to analysis. the prior (normal distribution) will create a very narrow pattern. which very different from posterior and may not be the best chioce in here. 
+
+prior2 <- c(
+  prior(normal(0.002817704,  0.01164472), class = Intercept),
+  prior(normal(0.003734146, 0.01672553), class = b),
+#  prior(normal(0, 20), class = sd), i not sure how to set this cause it was not in the posterior summery
+#  prior(lkj(2), class = cor),
+  prior(normal(0.05707197, 0.006064183), class = sigma)
+#  prior(normal(0, log(50)), class = Intercept, dpar = sigma), # i didnt set individual sigma for the model
+#  prior(normal(0, 5),
+#    class = sd, group = subj,
+#    dpar = sigma
+# please check 5.2.6 to set the individual sigma
+  )
+
+```
+
+```{r}
+fit2 <- brm(
+  formula = model1, # formula we defined above 
+  data = fhdiff2, # Data frame we're using 
+  family = gaussian(), # What distribution family do we want for the likelihood function? 
+  prior = prior2,
+  sample_prior = TRUE, # Setting this to true includes the prior in the object, so we can include it on plots later
+  seed = 1908,
+ file = "Models/model2" #Save the model as a .rds file
+)
+```
+```{r}
+pp_check(fit2, 
+         ndraws = 100)
+```
+
+```{r}
+plot(p_direction(fit2), 
+     priors = TRUE) 
+```
+
+```{r}
+plot(bayestestR::hdi(fit2)) 
+```
+
+```{r}
+ posterior_summary(fit2)
+```
+
+```{r}
+fhodiff4 <- filter(fhodiff, ktimes == 4)
+fhydiff4 <- filter(fhydiff, ktimes == 4)
+
+
+fhdiff4 <- rbind(fhodiff4, fhydiff4)
+```
+
+```{r}
+prior3 <- c(
+  prior(normal(0.002090107, 0.008682146), class = Intercept),
+  prior(normal(0.002466373,  0.011594751), class = b),
+  prior(normal( 0.055364750, 0.004229451), class = sigma))
+
+```
+
+
+```{r}
+fit3 <- brm(
+  formula = model1, # formula we defined above 
+  data = fhdiff4, # Data frame we're using 
+  family = gaussian(), # What distribution family do we want for the likelihood function? 
+  prior = prior3,
+  sample_prior = TRUE, # Setting this to true includes the prior in the object, so we can include it on plots later
+  seed = 1908,
+ file = "Models/model3" #Save the model as a .rds file
+)
+```
+
+```{r}
+p<-plot(p_direction(fit), 
+     priors = TRUE) 
+```
+```{r}
+fhodiff1 <- fhodiff|>
+  subset(ktimes >= 50)|>
+  subset(ktimes <= 400)
+
+fhydiff1 <- fhydiff|>
+  subset(ktimes >= 50)|>
+  subset(ktimes <= 400)
+
+ktimes1 <- as.matrix(seq(from = 50, to = 400, by =2)) 
+
+
+```
+
+
+```{r}
+
+for (i in 1: 176){
+  t<- ktimes1[i]
+  fhodiff1 <- filter(fhodiff, ktimes == t)
+  fhydiff1 <- filter(fhydiff, ktimes == t)
+  fhdiff <- rbind(fhodiff1, fhydiff1)
+  if (i == 1){fit <- brm(
+  formula = model1, # formula we defined above 
+  data = fhdiff, # Data frame we're using 
+  family = gaussian(), # What distribution family do we want for the likelihood function? 
+  sample_prior = TRUE, # Setting this to true includes the prior in the object, so we can include it on plots later
+  seed = 1908,
+ file = paste0("Models/model",t) #Save the model as a .rds file
+)}
+  else {fit <- brm(
+  formula = model1, # formula we defined above 
+  data = fhdiff, # Data frame we're using 
+  family = gaussian(), # What distribution family do we want for the likelihood function? 
+  prior = prior,
+  sample_prior = TRUE, # Setting this to true includes the prior in the object, so we can include it on plots later
+  seed = 1908,
+ file = paste0("Models/model",t) #Save the model as a .rds file
+)}
+  posterior1 <- posterior_summary(fit)
+  p1<-as.numeric(posterior1[1,1])
+  p2<-as.numeric(posterior1[1,2])
+  p3<-as.numeric(posterior1[2,1])
+  p4<-as.numeric(posterior1[2,2])
+  p5<-as.numeric(posterior1[3,1])
+  p6<-as.numeric(posterior1[3,2])
+  
+  prior <- c(
+  prior(normal(p1, p2), class = Intercept),
+  prior(normal(p3, p4), class = b),
+  prior(normal(p5, p6), class = sigma))
+  
+  p <- plot(p_direction(fit), priors = TRUE)
+  ggsave(paste0("Plots/plot", t, ".png"), p, width = 6, height = 4)
+}
+```
+If you what to see whether a prior is appropreat or not could use the following code. 
+```{r}
+priors %>% 
+  parse_dist() %>% # Function from tidybayes/ggdist to turn prior into a dataframe
+  ggplot(aes(y = 0, dist = .dist, args = .args, fill = prior)) + # Fill in details from prior and add fill
+  stat_slab(normalize = "panels") + # ggdist layer to visualise distributions
+  scale_fill_viridis_d(option = "plasma", end = 0.9) + # Add colour scheme
+  guides(fill = "none") + # Remove legend for fill
+  facet_wrap(~prior) + # Split into a different panel for each prior
+  labs(x = "Value", y = "Density") +
+  theme_classic()
+```
+
