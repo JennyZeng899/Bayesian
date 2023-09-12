@@ -1,7 +1,7 @@
 # Bayesian
 To import the data, you need to change the file address that suits your computer 
 This import data is based on the data file Kasha sent me with 288 text files. With more data need to have improvement with the import data function.  
-but the key idea is to create a long-format data file with all participants in one condition. 
+but the key idea is to create a long-format data file with all participants from one gorup in one condition. 
 
 please run through the testing part to see whether the function is working on your computer or not. 
 please delete the testing fit model after finishing testing otherwise the naming may overlap with the model name in the loop. 
