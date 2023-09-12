@@ -4,7 +4,7 @@ This import data is based on the data file Kasha sent me with 288 text files. Wi
 but the key idea is to create a long-format data file with all participants in one condition. 
 
 please run through the testing part to see whether the function is working on your computer or not. 
-please delay the testing fit model after finishing testing otherwise the naming may overlap with the model name in the loop. 
+please delete the testing fit model after finishing testing otherwise the naming may overlap with the model name in the loop. 
 I put all the functions that I think may be necessary to the Bayesian model in the testing code. for more testing functions, like hypothesis testing, and so on. Please visit: https://bartlettje.github.io/statsresdesign/introduction-to-bayesian-estimation.html
 
 the normal distribution may not be the best distribution to set the prior. the prior set with normal diribution is too narrow compared to the posterior. see the screenshot for evidence. 
